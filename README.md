@@ -1,12 +1,17 @@
 # IT Jobs Lakehouse & ELT Pipeline
 
-Portfolio data engineering project that incrementally collects IT job postings, stores raw batches in Delta Lake and PostgreSQL, transforms them with dbt, and serves analytical marts through a Streamlit dashboard.
+An end-to-end ELT pipeline that incrementally collects IT job postings from ITviec, lands them in a Bronze layer (Delta Lake + PostgreSQL), models them with dbt through a Medallion architecture (Bronze, Silver, Gold), and serves 15 analytical marts through a Streamlit dashboard. Airflow runs it daily; the whole stack starts with one docker compose up.
 
-**[Open the public Streamlit dashboard](https://itpipetest2-fjugbxbywckpekmf3m4rsb.streamlit.app/)**
+**[Open the public Streamlit dashboard](https://it-jobs-lakehouse-8aclva3exbqkxpt486n6e6.streamlit.app/)**
 
-The scheduled pipeline crawls **ITviec**. ITviec shows salary only to signed-in
-users, so the crawler needs a local authenticated browser session and fails
-closed without one. Historical data from TopCV, [Kaggle](https://www.kaggle.com/datasets/bismasajjad/global-ai-job-market-and-salary-trends-2025) and other manually collected sources can remain in the warehouse.
+## What it demonstrates
+
+- **Incremental, fail-closed ingestion.** Known job IDs are skipped, the crawl stops after three consecutive pages with nothing new (hard cap of seven pages), failing jobs are quarantined after three attempts, and the run fails instead of writing partial or salary-less data when the session or page structure is broken.
+- **Idempotent dual-write Bronze.** Each batch is written to Delta Lake (`MERGE` on the natural key) and then to PostgreSQL JSONB (`INSERT ... ON CONFLICT DO UPDATE`); the crawl state is recorded last, so an Airflow retry converges to the same result.
+- **Medallion modelling with dbt.** Staging, Silver, Gold star schema (fact, dimensions, job-skill bridge) and 15 marts, with a custom `gold_merge` materialization that issues a `MERGE` into pre-created, partitioned Gold tables.
+- **Layered data quality.** 223 dbt data tests plus four pipeline guards (freshness, volume, salary coverage, skills coverage) that stop the DAG before anything is published. Jobs whose salary cannot be parsed are kept out of Silver and exposed through the auditable `rejected_jobs` view.
+- **Atomic publishing.** All 15 marts go to Supabase in a single transaction, with row counts and column types verified before commit; a failed check rolls back and the previous snapshot stays.
+- **Reproducible and maintained.** Locked dependencies (`uv.lock`), digest-pinned images, CI with a secret scan, Ruff, dbt tests and a 10-page dashboard smoke test, plus Dependabot and a weekly upstream image check.
 
 ## Architecture
 
@@ -15,17 +20,16 @@ closed without one. Historical data from TopCV, [Kaggle](https://www.kaggle.com/
 
 ![DAG](demo/flowchart_airflow.png)
 
-The DAG runs daily at `02:00 Asia/Bangkok`. ITviec is limited to seven pages to target recent jobs instead of
-recrawling the site in full.
+The DAG runs daily at `02:00 Asia/Bangkok`. ITviec is limited to seven pages to target recent jobs instead of recrawling the site in full.
 
-## Data flow
+### Data flow
 
-- **Bronze:** raw crawler payloads in Delta Lake on S3-compatible object storage (MinIO-compatible) and PostgreSQL JSONB.
-- **Staging/Silver:** normalized jobs, salary parsing, static Kaggle data and an
-  auditable `rejected_jobs` quarantine relation.
-- **Gold:** `fact_job_postings`, company/location/date/skill dimensions and the
-  job-skill bridge.
-- **Marts:** reporting views consumed by the dashboard.
+| Layer                | What it holds                                                                                                                                   |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bronze**           | Raw crawler payloads in Delta Lake on S3-compatible object storage and in PostgreSQL (`payload` JSONB); static Kaggle data; per-job crawl state |
+| **Staging / Silver** | Normalized jobs, salary parsing to a yearly USD range, company/location/skill normalization through seeds, and the `rejected_jobs` view         |
+| **Gold**             | `fact_job_postings`, company/location/date/skill dimensions and the job-skill bridge                                                            |
+| **Marts**            | 15 reporting views (published to Supabase as tables) consumed by the dashboard                                                                  |
 
 ## Analytical marts
 
@@ -39,6 +43,12 @@ The project currently builds 15 analytical marts for:
 - Data Engineer jobs;
 - employment type and remote/hybrid/on-site distribution;
 - source-level data quality.
+
+### Sources
+
+The scheduled pipeline crawls **ITviec** only. ITviec shows salary only to signed-in users, so the crawler needs a local authenticated browser session and fails closed without one. 
+Historical [Kaggle](https://www.kaggle.com/datasets/bismasajjad/global-ai-job-market-and-salary-trends-2025) data is loaded manually.
+
 
 ## Prerequisites
 
@@ -72,12 +82,12 @@ docker compose up -d --build --wait
 docker compose ps -a
 ```
 
-## 3.1. Optional: With an ITviec account: create the session, then crawl and load a small batch.
+## 3.1. Optional: With an ITviec account: create the browser session, then crawl and load a small batch.
 
 ```powershell
 uv run python scripts/login_setup_itviec.py
 uv run python crawl_itviec.py --max-pages 5
-$parquetPath = 'data/raw/itviec/<FILE>.parquet'   # printed as PARQUET_PATH by the crawl
+$parquetPath = 'data/raw/itviec/<FILE>.parquet'
 uv run python -m src.load_bronze_crawled --parquet-path $parquetPath --source-name itviec
 ```
 
@@ -91,7 +101,7 @@ Tasks run in this order: `crawl_itviec`, `load_bronze_itviec`, `dbt_seed`,
 `dbt_run`, `dbt_test`, `publish_marts_to_supabase`. The last task is `skipped`
 when `SUPABASE_DB_URL` is blank.
 
-## 3.2. Optional: Without an ITviec account: load the Kaggle CSV (download it first, see Manual ingestion and dbt).
+## 3.2. Optional: Without an ITviec account: load the Kaggle CSV (download it first to `data/raw/kaggle/ai_job_dataset.csv`).
 
 ```powershell
 New-Item -ItemType Directory -Force data/raw/kaggle | Out-Null
@@ -119,6 +129,8 @@ no mart views to read until `dbt run` has built them.
 | Adminer | http://localhost:8081 | `POSTGRES_USER` / `POSTGRES_PASSWORD` from `.env` (Server: `postgres`, DB: `POSTGRES_DB`) |
 | Object storage console | http://localhost:9101 | `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` from `.env` |
 
+To stop the stack, run `docker compose down`. Adding `-v` also deletes the PostgreSQL, object-storage and Airflow-log volumes.
+
 ## Publish Gold marts to Supabase
 
 Supabase is a derived serving layer for the public dashboard, not the pipeline source of truth. Set `SUPABASE_DB_URL` in `.env` file. After `dbt_test` succeeds, 
@@ -128,89 +140,51 @@ snapshot). If the variable is blank, the task is marked `skipped`, so a fresh lo
 ## Project Structure
 
 ```text
-IT_jobs_pipeline/
+.
 ├── .github/
+│   ├── dependabot.yml
 │   └── workflows/
-│       └── ci.yml                    # CI: lint, dbt tests, dashboard smoke test
-│
-├── .env.example                      # Local configuration template (copy to .env)
-│
-├── crawl_itviec.py                   # CLI entry point for the ITviec crawl
-│
+│       ├── ci.yml                    # lint, dbt tests, dashboard smoke test
+│       └── upstream-check.yml        # weekly image availability check
 ├── containers/
-│   ├── airflow/                      # Airflow image/configuration
-│   ├── dashboard/                    # Streamlit dashboard container
-│   └── postgres/                     # PostgreSQL initialization
-│
+│   ├── airflow/                      # Airflow image
+│   ├── dashboard/                    # Streamlit image
+│   └── postgres/                     # PostgreSQL initialization (Gold DDL)
 ├── dags/
-│   ├── it_jobs_lakehouse_dag.py       # Airflow orchestration: crawl → Bronze → dbt → publish
-│   └── telegram_alerts.py            # Retry/failure callback -> Telegram
-│
+│   ├── it_jobs_lakehouse_dag.py      # crawl → Bronze → dbt → publish
+│   └── telegram_alerts.py            # failure callback → Telegram
 ├── dashboard/
-│   ├── app.py                        # Streamlit dashboard (pages, charts, data-dependent insights)
+│   ├── app.py                        # Streamlit pages, charts, data-driven insights
 │   ├── queries.py                    # SQL for the dashboard pages
-│   └── smoke_test.py                 # Renders all 10 pages (used by CI)
-│
+│   └── smoke_test.py                 # renders all 10 pages (used by CI)
 ├── src/
-│   ├── config.py                     # Environment-based configuration
-│   ├── crawl_runner.py               # Crawl orchestration and source dispatch
-│   ├── incremental_state.py          # Incremental crawl state / job ID tracking
-│   ├── it_job_filter.py              # Conservative IT-scope classification
-│   ├── load_bronze_crawled.py        # Validate + write crawled data to Bronze
-│   ├── load_bronze_kaggle.py         # Load the Kaggle CSV into Bronze
-│   │
-│   ├── output/
-│   │   └── parquet_writer.py         # Write crawl batches to Parquet
-│   │
-│   ├── pages/
-│   │   ├── base_page.py              # Shared page-object helpers (safe_text, retries)
-│   │   ├── itviec_job_list_page.py   # ITviec job-list page interaction
-│   │   └── itviec_job_detail_page.py # ITviec job-detail page interaction
-│   │
-│   ├── schemas/
-│   │   └── raw_job.py                # Pydantic schema for raw job postings
-│   │
-│   └── scrapers/
-│       ├── base.py                   # Shared scraper lifecycle/error handling
-│       ├── errors.py                 # Crawl error types
-│       ├── incremental.py            # Incremental scraping logic
-│       ├── itviec_scraper.py         # ITviec-specific scraper
-│       └── normalization.py          # Raw field normalization
-│
+│   ├── config.py                     # environment-based configuration
+│   ├── crawl_runner.py               # crawl orchestration
+│   ├── incremental_state.py          # per-job crawl state (loaded/rejected/failed/quarantined)
+│   ├── it_job_filter.py              # IT-scope classification
+│   ├── load_bronze_crawled.py        # validate + dual-write crawled data to Bronze
+│   ├── load_bronze_kaggle.py         # load the Kaggle CSV into Bronze
+│   ├── output/                       # Parquet writer
+│   ├── pages/                        # ITviec page objects
+│   ├── schemas/                      # Pydantic schema for raw jobs
+│   └── scrapers/                     # scraper lifecycle, incremental logic, errors
 ├── transform_dbt/
-│   ├── models/
-│   │   ├── staging/                  # Source-level normalization
-│   │   ├── silver/                   # Conformed/cleaned job data
-│   │   ├── gold/                     # Dimensional model + bridges
-│   │   └── marts/                    # 15 analytical marts served to the dashboard
-│   │
-│   ├── macros/
-│   │   └── materializations/         # Custom Gold merge/upsert materialization
-│   │
-│   ├── seeds/
-│   │   ├── skill_aliases.csv         # Canonical skill mapping
-│   │   └── fx_rates.csv              # Currency conversion rates
-│   │
-│   └── tests/                        # dbt data-quality tests
-│
+│   ├── models/                       # staging, silver, gold, marts (26 models)
+│   ├── macros/                       # salary parser, company key, gold_merge, stale-row cleanup
+│   ├── seeds/                        # fx_rates, skill_aliases, company_aliases, vn_location_aliases
+│   └── tests/                        # singular data-quality tests and pipeline guards
 ├── scripts/
-│   ├── check_secrets.py              # Secret scan (used by CI)
-│   ├── login_setup_itviec.py         # Create the ITviec browser session
-│   ├── publish_marts_to_supabase.py  # Publish Gold marts to Supabase
-│   └── cloud/                        # Cloud/GCS-related utilities
-│
-├── demo/
-│   └── ...                            # Demo assets
-│
-├── storage_state/
-│   └── ...                            # Local authenticated browser session state
-│
-├── docker-compose.yml                # Local multi-container environment
-├── pyproject.toml / uv.lock          # Pinned Python dependencies
-└── README.md                         # Project documentation
+│   ├── check_secrets.py              # secret scan (used by CI)
+│   ├── login_setup_itviec.py         # create the ITviec browser session
+│   ├── publish_marts_to_supabase.py  # publish Gold marts to Supabase
+│   └── cloud/                        # optional GCS utilities (not part of the DAG)
+├── demo/                             # architecture diagrams
+├── storage_state/                    # local ITviec session (git-ignored)
+├── crawl_itviec.py                   # CLI entry point for the ITviec crawl
+├── docker-compose.yml
+├── pyproject.toml / uv.lock
+└── LICENSE
 ```
-
-
 
 ## Limitations
 
@@ -219,3 +193,7 @@ IT_jobs_pipeline/
 - The daily crawl reads seven ITviec pages. After an outage longer than a few
   days, recover the backlog with a one-off crawl that raises both `--max-pages`
   and `--known-pages-stop`.
+
+## License
+
+[MIT](LICENSE)
