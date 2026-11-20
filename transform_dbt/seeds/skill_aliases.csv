@@ -1,0 +1,311 @@
+skill_alias,canonical_skill_name,skill_category
+.net,.net,framework
+.net core,.net core,framework
+3d artist,3d design,design
+abap,abap,programming_language
+adobe illustrator,adobe illustrator,design
+adobe photoshop,adobe photoshop,design
+agile,agile,methodology
+agile/scrum,agile,methodology
+ai,artificial intelligence,data_ai
+airflow,apache airflow,data_engineering
+algorithms,algorithms,computer_science
+android,android,mobile
+angular,angular,framework
+animation,animation,design
+ansible,ansible,devops
+apache airflow,apache airflow,data_engineering
+apache spark,apache spark,data_engineering
+api,api,architecture
+application security,application security,security
+appium,appium,testing
+artificial intelligence,artificial intelligence,data_ai
+asp.net,asp.net,framework
+asp.net core,asp.net core,framework
+aspice,aspice,embedded
+automation test,test automation,testing
+automation tester,test automation,testing
+autosar,autosar,embedded
+aws,aws,cloud
+aws cloudformation,aws cloudformation,cloud
+aws lambda,aws lambda,cloud
+azure,azure,cloud
+azure sql database,azure sql database,database
+bash,bash,programming_language
+bash shell,bash,programming_language
+big data,big data,data_engineering
+blockchain,blockchain,architecture
+blender,blender,design
+bpmn,bpmn,business_analysis
+brd,brd,business_analysis
+business analysis,business analysis,business_analysis
+business analyst,business analysis,business_analysis
+business intelligence,business intelligence,data_analytics
+c,c,programming_language
+c language,c,programming_language
+c#,c#,programming_language
+c++,c++,programming_language
+ci/cd,ci/cd,devops
+cisco,cisco,networking
+clean architecture,clean architecture,architecture
+cloud,cloud computing,cloud
+cloud computing,cloud computing,cloud
+cloud security,cloud security,security
+cloud-native architecture,cloud-native architecture,architecture
+cloudformation,aws cloudformation,cloud
+cobol,cobol,programming_language
+computer vision,computer vision,data_ai
+crm,crm,enterprise_platform
+css,css,web
+css 3,css,web
+css3,css,web
+cyber security,cybersecurity,security
+cybersecurity,cybersecurity,security
+data analysis,data analysis,data_analytics
+data analytics,data analysis,data_analytics
+data mining,data mining,data_analytics
+data modeling,data modeling,data_engineering
+data privacy / compliance,data privacy and compliance,security
+data quality tools,data quality,data_engineering
+data visualization,data visualization,data_analytics
+data warehouse,data warehousing,data_engineering
+data warehousing,data warehousing,data_engineering
+database,database,database
+databricks,databricks,data_engineering
+dbt,dbt,data_engineering
+deep learning,deep learning,data_ai
+design systems,design systems,design
+devops,devops,devops
+devsecops,devsecops,security
+django,django,framework
+docker,docker,devops
+domain-driven design,domain-driven design,architecture
+edr,edr,security
+elasticsearch,elasticsearch,database
+embedded,embedded systems,embedded
+embedded c,embedded c,embedded
+enterprise architecture,enterprise architecture,architecture
+erp,erp,enterprise_platform
+etl,etl,data_engineering
+event-driven architecture,event-driven architecture,architecture
+fastapi,fastapi,framework
+figma,figma,design
+firebase,firebase,cloud
+firewall,firewall,security
+firmware,firmware,embedded
+flask,flask,framework
+flutter,flutter,mobile
+gcp,gcp,cloud
+generative ai,generative ai,data_ai
+git,git,devops
+github,github,devops
+github actions,github actions,devops
+gitlab ci,gitlab ci,devops
+go,go,programming_language
+golang,go,programming_language
+google cloud,gcp,cloud
+grafana,grafana,observability
+graphql,graphql,web
+hadoop,hadoop,data_engineering
+hardware design,hardware design,hardware
+hardware troubleshooting,hardware troubleshooting,hardware
+hibernate,hibernate,framework
+html,html,web
+html5,html,web
+hyper-v,hyper-v,infrastructure
+identity & access management,identity and access management,security
+ids/ips,ids/ips,security
+incident response,incident response,security
+information security,information security,security
+internet of things,iot,embedded
+iot,iot,embedded
+ios,ios,mobile
+iso 27001,iso 27001,security
+it audit,it audit,security
+it governance,it governance,governance
+it infrastructure,it infrastructure,infrastructure
+it security,it security,security
+itil foundation,itil,methodology
+j2ee,j2ee,framework
+java,java,programming_language
+javascript,javascript,programming_language
+jenkins,jenkins,devops
+jira,jira,methodology
+jquery,jquery,framework
+json,json,data_format
+junit,junit,testing
+kafka,apache kafka,data_engineering
+kotlin,kotlin,programming_language
+kotlinx.coroutines,kotlin coroutines,framework
+kubernetes,kubernetes,devops
+laravel,laravel,framework
+linux,linux,operating_system
+llm,large language models,data_ai
+looker,looker,data_analytics
+machine learning,machine learning,data_ai
+mathematics,mathematics,computer_science
+matlab,matlab,programming_language
+microservice,microservices,architecture
+microservices,microservices,architecture
+microservices architecture,microservices,architecture
+middleware,middleware,architecture
+microsoft 365,microsoft 365,enterprise_platform
+microsoft azure sql database,azure sql database,database
+microsoft dynamics 365,microsoft dynamics 365,enterprise_platform
+microsoft sql server,sql server,database
+mlops,mlops,data_ai
+mobile apps,mobile development,mobile
+mongodb,mongodb,database
+mysql,mysql,database
+mvc,mvc,architecture
+mvvm,mvvm,architecture
+nestjs,nestjs,framework
+network,networking,networking
+network security,network security,security
+networking,networking,networking
+next.js,next.js,framework
+nextjs,next.js,framework
+nlp,natural language processing,data_ai
+node,node.js,framework
+node.js,node.js,framework
+nodejs,node.js,framework
+nosql,nosql,database
+ocr,ocr,data_ai
+odoo,odoo,enterprise_platform
+oop,object-oriented programming,computer_science
+oracle,oracle database,database
+oracle database,oracle database,database
+outsystems,outsystems,enterprise_platform
+owasp,owasp,security
+pandas,pandas,data_analytics
+penetration testing,penetration testing,security
+pentest,penetration testing,security
+php,php,programming_language
+pl/sql,pl/sql,programming_language
+playwright,playwright,testing
+postgres,postgresql,database
+postgresql,postgresql,database
+postman,postman,testing
+power automate,power automate,enterprise_platform
+power bi,power bi,data_analytics
+powershell,powershell,programming_language
+prompt engineering,prompt engineering,data_ai
+pytorch,pytorch,data_ai
+python,python,programming_language
+qa,qa/qc,testing
+qa qc,qa/qc,testing
+qa/qc,qa/qc,testing
+r,r,programming_language
+react,react,framework
+react.js,react,framework
+react native,react native,mobile
+reactjs,react,framework
+redis,redis,database
+redux,redux,framework
+rest api,rest api,architecture
+restful api,rest api,architecture
+risk & compliance,risk and compliance,security
+rtos,rtos,embedded
+ruby,ruby,programming_language
+ruby on rails,ruby on rails,framework
+rust,rust,programming_language
+salesforce,salesforce,enterprise_platform
+sap,sap,enterprise_platform
+scala,scala,programming_language
+scrum,scrum,methodology
+security,cybersecurity,security
+selenium,selenium,testing
+server,server administration,infrastructure
+servicenow,servicenow,enterprise_platform
+shell scripting,bash,programming_language
+siem,siem,security
+snowflake,snowflake,data_engineering
+soar,soar,security
+software architecture,software architecture,architecture
+solid,solid principles,architecture
+solid principles,solid principles,architecture
+solution architecture,solution architecture,architecture
+spark,apache spark,data_engineering
+spring,spring,framework
+spring boot,spring boot,framework
+sql,sql,database
+sql server,sql server,database
+srs,srs,business_analysis
+statistical analysis,statistics,data_analytics
+statistics,statistics,data_analytics
+swift,swift,programming_language
+system admin,system administration,infrastructure
+system administration,system administration,infrastructure
+system architecture,system architecture,architecture
+tableau,tableau,data_analytics
+tensorflow,tensorflow,data_ai
+terraform,terraform,devops
+test automation,test automation,testing
+tester,software testing,testing
+testing,software testing,testing
+typescript,typescript,programming_language
+ui-ux,ui/ux,design
+ui/ux,ui/ux,design
+uml,uml,architecture
+unit test,unit testing,testing
+unity,unity,game_development
+unity3d,unity,game_development
+unix,unix,operating_system
+unreal engine,unreal engine,game_development
+user story,user stories,business_analysis
+ux/ui design,ui/ux,design
+vba,vba,programming_language
+vmware,vmware,infrastructure
+vue,vue.js,framework
+vue.js,vue.js,framework
+vuejs,vue.js,framework
+waterfall methodology,waterfall,methodology
+web api,api,architecture
+web3.js,web3.js,framework
+windows,windows,operating_system
+windows server,windows server,operating_system
+winforms,winforms,framework
+wordpress,wordpress,framework
+wpf,wpf,framework
+zero trust architecture,zero trust,security
+a/b testing,a/b testing,data_analytics
+adobe,adobe creative cloud,design
+chinese,chinese,language
+communication,communication,professional_skill
+data science,data science,data_ai
+design,design,design
+english,english,language
+french,french,language
+game developer,game development,game_development
+games,game development,game_development
+giao tiếp,communication,professional_skill
+giao tiếp hiệu quả,communication,professional_skill
+giải quyết vấn đề,problem solving,professional_skill
+illustrator,adobe illustrator,design
+it communication/translation,technical communication,language
+it support,it support,infrastructure
+japanese,japanese,language
+japanese - n2,japanese,language
+japanese it communication,japanese,language
+korean,korean,language
+kỹ năng giao tiếp,communication,professional_skill
+làm việc nhóm,teamwork,professional_skill
+leadership,leadership,professional_skill
+logical thinking,logical thinking,professional_skill
+phân tích nghiệp vụ,business analysis,business_analysis
+phân tích dữ liệu,data analysis,data_analytics
+photoshop,adobe photoshop,design
+product design,product design,design
+product management,product management,business_analysis
+product owner,product owner,methodology
+product roadmap,product management,business_analysis
+product strategy,product management,business_analysis
+project management,project management,methodology
+quản lý dự án,project management,methodology
+quản lý thời gian,time management,professional_skill
+risk management,risk management,governance
+stakeholder management,stakeholder management,professional_skill
+team management,team management,professional_skill
+technical writing,technical writing,professional_skill
+tư duy logic,logical thinking,professional_skill
+xử lý vấn đề,problem solving,professional_skill

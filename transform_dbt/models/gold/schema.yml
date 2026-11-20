@@ -1,0 +1,92 @@
+version: 2
+
+models:
+  - name: dim_date
+    columns:
+      - name: date_sk
+        data_tests: [not_null, unique]
+
+  - name: dim_companies
+    columns:
+      - name: company_sk
+        data_tests: [not_null, unique]
+      - name: company_nk
+        data_tests: [not_null, unique]
+      - name: company_name
+        data_tests: [not_null]
+
+  - name: dim_locations
+    columns:
+      - name: location_sk
+        data_tests: [not_null, unique]
+      - name: country
+        data_tests: [not_null]
+
+  - name: dim_skills
+    columns:
+      - name: skill_sk
+        data_tests: [not_null, unique]
+      - name: skill_name
+        data_tests: [not_null, unique]
+
+  - name: fact_job_postings
+    columns:
+      - name: job_sk
+        data_tests: [not_null]
+      - name: posted_date
+        data_tests: [not_null]
+      - name: job_id_nk
+        data_tests: [not_null]
+      - name: source_type
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['crawled', 'kaggle_dataset']
+      - name: source_name
+        data_tests: [not_null]
+      - name: company_sk
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_companies')
+                field: company_sk
+      - name: location_sk
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_locations')
+                field: location_sk
+      - name: job_title
+        data_tests: [not_null]
+      - name: salary_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['scraped', 'corrected', 'not_disclosed', 'invalid']
+
+  - name: bridge_job_skills
+    columns:
+      - name: job_sk
+        data_tests: [not_null]
+      - name: posted_date
+        data_tests: [not_null]
+      - name: skill_sk
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_skills')
+                field: skill_sk
+
+  - name: canonical_job_skills
+    description: Governed job-skill associations mapped through the curated skill_aliases taxonomy; unknown raw labels remain preserved in bridge_job_skills but are excluded from analytical skill marts.
+    columns:
+      - name: job_sk
+        data_tests: [not_null]
+      - name: posted_date
+        data_tests: [not_null]
+      - name: skill_name
+        data_tests: [not_null]
+      - name: skill_category
+        data_tests: [not_null]

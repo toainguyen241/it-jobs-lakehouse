@@ -1,0 +1,46 @@
+name: 'it_jobs_lakehouse'
+version: '1.0.0'
+config-version: 2
+
+profile: 'it_jobs_lakehouse'
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+on-run-start:
+  - "{{ create_text_matching_extensions() }}"
+  - "{{ create_salary_parser_function() }}"
+  - "{{ ensure_fact_month_partitions(1) }}"
+
+vars:
+  crawl_market_year: 2026   
+
+models:
+  it_jobs_lakehouse:
+    staging:
+      +schema: silver          
+      +materialized: view
+    silver:
+      +schema: silver
+      +materialized: table     
+    gold:
+      +schema: gold
+      +materialized: table
+    marts:
+      +schema: gold
+      +materialized: view
+
+seeds:
+  it_jobs_lakehouse:
+    +schema: silver
+    fx_rates:
+      +column_types:
+        currency: varchar(10)
+        usd_rate: numeric

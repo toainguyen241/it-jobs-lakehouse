@@ -1,0 +1,255 @@
+version: 2
+
+models:
+  - name: mart_job_market_overview
+    description: Daily job supply and salary coverage by source and location.
+    columns:
+      - name: posted_date_is_estimated
+        data_tests: [not_null]
+      - name: posted_date
+        data_tests: [not_null]
+      - name: source_name
+        data_tests: [not_null]
+      - name: job_count
+        data_tests: [not_null]
+
+  - name: mart_salary_benchmark
+    description: Job-level annual USD salary benchmark for usable salaries.
+    columns:
+      - name: job_sk
+        data_tests: [not_null, unique]
+      - name: posted_date
+        data_tests: [not_null]
+      - name: salary_mid_usd
+        data_tests: [not_null]
+
+  - name: mart_skills_demand
+    description: Daily demand and salary benchmark by source, location, and skill.
+    columns:
+      - name: posted_date
+        data_tests: [not_null]
+      - name: source_name
+        data_tests: [not_null]
+      - name: skill_name
+        data_tests: [not_null]
+      - name: job_count
+        data_tests: [not_null]
+
+  - name: mart_company_hiring
+    description: Hiring activity and salary coverage by source and grouped company.
+    columns:
+      - name: source_name
+        data_tests: [not_null]
+      - name: company_group_key
+        description: "Heuristic company key (accent, case, spacing and legal-form insensitive, plus seeds/company_aliases.csv)."
+        data_tests: [not_null]
+      - name: company_name
+        data_tests: [not_null]
+      - name: job_count
+        data_tests: [not_null]
+
+  - name: mart_data_quality
+    description: Source-level completeness and coverage metrics for Gold jobs.
+    columns:
+      - name: source_name
+        data_tests: [not_null, unique]
+      - name: total_jobs
+        data_tests: [not_null]
+      - name: jobs_outside_crawl_year
+        description: "Crawled jobs whose posted year differs from var crawl_market_year; excluded from Gold marts."
+        data_tests: [not_null]
+      - name: jobs_estimated_posted_date
+        description: "Jobs whose posted_date is a fallback (crawl date), excluded from time-based views."
+        data_tests: [not_null]
+      - name: jobs_with_invalid_salary
+        description: "Bronze jobs quarantined by the salary parser before Silver/Gold."
+        data_tests: [not_null]
+      - name: salary_coverage_rate
+        data_tests: [not_null]
+      - name: skills_coverage_rate
+        data_tests: [not_null]
+
+  - name: mart_jobs_by_country
+    description: Job volume, source mix, and salary coverage by country.
+    columns:
+      - name: country
+        data_tests: [not_null, unique]
+      - name: total_jobs
+        data_tests: [not_null]
+      - name: salary_coverage_rate
+        data_tests: [not_null]
+
+  - name: mart_salary_by_source
+    description: Annual USD salary coverage, averages, and median by source.
+    columns:
+      - name: source_name
+        data_tests: [not_null, unique]
+      - name: total_jobs
+        data_tests: [not_null]
+      - name: salary_coverage_rate
+        data_tests: [not_null]
+
+  - name: mart_jobs_by_skill
+    description: Job volume, source mix, and annual USD salary by skill.
+    columns:
+      - name: skill_name
+        data_tests: [not_null, unique]
+      - name: total_jobs
+        data_tests: [not_null]
+
+  - name: mart_hot_skills
+    description: Top 20 skills by job demand in the latest reproducible 30-day window.
+    columns:
+      - name: hot_rank
+        data_tests: [not_null, unique]
+      - name: skill_name
+        data_tests: [not_null, unique]
+      - name: job_count
+        data_tests: [not_null]
+      - name: window_start_date
+        data_tests: [not_null]
+      - name: window_end_date
+        data_tests: [not_null]
+
+  - name: mart_skill_trends_by_year
+    description: Independent canonical IT-skill demand and annual USD salary trends for the Kaggle 2025 and crawled 2026 cohorts.
+    columns:
+      - name: market_year
+        data_tests: [not_null]
+      - name: skill_name
+        data_tests: [not_null]
+      - name: source_scope
+        data_tests: [not_null]
+      - name: total_jobs
+        data_tests: [not_null]
+      - name: job_count
+        data_tests: [not_null]
+      - name: demand_rate
+        data_tests: [not_null]
+      - name: jobs_with_salary
+        data_tests: [not_null]
+
+  - name: mart_cross_source_duplicates
+    description: Review-only candidate pairs for similar crawled jobs published by different sources; no source data is deleted.
+    columns:
+      - name: candidate_id
+        data_tests: [not_null, unique]
+      - name: left_job_sk
+        data_tests: [not_null]
+      - name: left_posted_date
+        data_tests: [not_null]
+      - name: left_source_name
+        data_tests: [not_null]
+      - name: source_pair
+        data_tests: [not_null]
+      - name: right_job_sk
+        data_tests: [not_null]
+      - name: right_posted_date
+        data_tests: [not_null]
+      - name: right_source_name
+        data_tests: [not_null]
+      - name: confidence_score
+        data_tests: [not_null]
+      - name: confidence_level
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['high', 'medium']
+      - name: review_status
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['pending_review']
+
+  - name: mart_domestic_vs_international_jobs
+    description: Job volume and salary comparison between the Vietnam and international markets, preserving source and year cohorts.
+    columns:
+      - name: market_year
+        data_tests: [not_null]
+      - name: source_name
+        data_tests: [not_null]
+      - name: market_scope
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Vietnam', 'International', 'Unknown']
+      - name: job_count
+        data_tests: [not_null]
+      - name: job_share_within_source_year
+        data_tests: [not_null]
+      - name: salary_coverage_rate
+        data_tests: [not_null]
+
+  - name: mart_data_engineer_jobs
+    description: Job-level Data Engineer market view with source, location, normalized work type, salary, and skills.
+    columns:
+      - name: job_sk
+        data_tests: [not_null, unique]
+      - name: posted_date
+        data_tests: [not_null]
+      - name: source_name
+        data_tests: [not_null]
+      - name: market_scope
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Vietnam', 'International', 'Unknown']
+      - name: job_title
+        data_tests: [not_null]
+      - name: employment_type
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Full-time', 'Part-time', 'Contract', 'Freelance', 'Internship', 'Unknown']
+      - name: work_arrangement
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Remote', 'Hybrid', 'On-site', 'Unknown']
+      - name: experience_level
+        description: Short experience label; text longer than 30 characters is replaced by 'Cần xem xét'.
+        data_tests: [not_null]
+      - name: experience_level_raw
+        description: Experience text exactly as stored in Gold, kept for tracing.
+      - name: skills
+        data_tests: [not_null]
+      - name: skill_count
+        data_tests: [not_null]
+
+  - name: mart_jobs_by_work_type
+    description: Job and salary metrics by normalized employment type and work arrangement for each source, year, and market scope.
+    columns:
+      - name: market_year
+        data_tests: [not_null]
+      - name: source_name
+        data_tests: [not_null]
+      - name: market_scope
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Vietnam', 'International', 'Unknown']
+      - name: employment_type
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Full-time', 'Part-time', 'Contract', 'Freelance', 'Internship', 'Unknown']
+      - name: work_arrangement
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Remote', 'Hybrid', 'On-site', 'Unknown']
+      - name: job_count
+        data_tests: [not_null]
+      - name: job_share_within_source_year
+        data_tests: [not_null]
+      - name: salary_coverage_rate
+        data_tests: [not_null]

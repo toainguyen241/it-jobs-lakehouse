@@ -1,0 +1,186 @@
+x-airflow-common: &airflow-common
+  build:
+    context: .
+    dockerfile: containers/airflow/Dockerfile
+  environment: &airflow-common-env
+    AIRFLOW__CORE__EXECUTOR: LocalExecutor
+    AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/airflow
+    AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW_FERNET_KEY}
+    AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+    AIRFLOW__WEBSERVER__EXPOSE_CONFIG: "false"
+    AIRFLOW__WEBSERVER__BASE_URL: http://localhost:8180
+    POSTGRES_HOST: postgres
+    POSTGRES_PORT: "5432"
+    POSTGRES_USER: ${POSTGRES_USER}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    POSTGRES_DB: it_jobs_dw
+    AWS_ENDPOINT_URL: http://minio:9000
+    AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+    AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+    AWS_REGION: us-east-1
+    AWS_ALLOW_HTTP: "true"
+    MINIO_BUCKET: it-jobs-lakehouse
+    TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+    TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+    SUPABASE_DB_URL: ${SUPABASE_DB_URL:-}
+    DQ_ITVIEC_FRESHNESS_HOURS: ${DQ_ITVIEC_FRESHNESS_HOURS:-72}
+    DQ_RECENT_WINDOW_HOURS: ${DQ_RECENT_WINDOW_HOURS:-36}
+    DQ_BASELINE_WINDOW_DAYS: ${DQ_BASELINE_WINDOW_DAYS:-14}
+    DQ_VOLUME_RECENT_DAYS: ${DQ_VOLUME_RECENT_DAYS:-7}
+    DQ_VOLUME_BASELINE_DAYS: ${DQ_VOLUME_BASELINE_DAYS:-28}
+    DQ_VOLUME_MIN_ACTIVE_DAYS: ${DQ_VOLUME_MIN_ACTIVE_DAYS:-14}
+    DQ_VOLUME_MIN_RATIO: ${DQ_VOLUME_MIN_RATIO:-0.20}
+    DQ_COVERAGE_MIN_RECENT_JOBS: ${DQ_COVERAGE_MIN_RECENT_JOBS:-5}
+    DQ_COVERAGE_MIN_BASELINE_JOBS: ${DQ_COVERAGE_MIN_BASELINE_JOBS:-20}
+    DQ_COVERAGE_MAX_DROP: ${DQ_COVERAGE_MAX_DROP:-0.20}
+    DBT_RUN_RESULTS_PATH: /opt/airflow/transform_dbt/target/run_results.json
+  volumes:
+    - ./dags:/opt/airflow/dags
+    - ./src:/opt/airflow/src
+    - ./data:/opt/airflow/data
+    - ./transform_dbt:/opt/airflow/transform_dbt
+    - ./crawl_itviec.py:/opt/airflow/crawl_itviec.py:ro
+    - ./storage_state:/opt/airflow/storage_state:ro
+    - airflow_logs:/opt/airflow/logs
+  depends_on:
+    postgres:
+      condition: service_healthy
+    minio-createbucket:
+      condition: service_completed_successfully
+
+services:
+  postgres:
+    image: postgres:16.15-trixie@sha256:1beaa3084eee2676f20a9cd9928f0bf2c5bf674f8e49f81017912183d377c61c
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: it_jobs_dw    
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./containers/postgres/init-multiple-dbs.sh:/docker-entrypoint-initdb.d/01-init-multiple-dbs.sh
+      - ./containers/postgres/init.sql:/docker-entrypoint-initdb.d/02-init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d it_jobs_dw"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  adminer:
+    image: adminer:6.1.2@sha256:251295c1cd51d3889f1c42ffa4864b24eeab51f0caf395cfe5bf4726c5ec9a2a
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8081:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  minio:
+    image: pgsty/silo@sha256:2636fc4155d9a7e41ff58cdb65ddd13ba9304e67184e13c25bc5cb34016269d7
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    pids_limit: 512
+    mem_limit: 1g
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "127.0.0.1:9100:9000"   # S3 API, local host only.
+      - "127.0.0.1:9101:9001"   # MinIO console, local host only.
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Auto-tạo bucket lúc khởi động lần đầu -- chạy 1 lần rồi exit, không phải service chạy liên tục.
+  minio-createbucket:
+    image: pgsty/silo@sha256:2636fc4155d9a7e41ff58cdb65ddd13ba9304e67184e13c25bc5cb34016269d7
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mcli alias set local http://minio:9000 ${MINIO_ROOT_USER} ${MINIO_ROOT_PASSWORD} &&
+      mcli mb --ignore-existing local/it-jobs-lakehouse
+      "
+
+  airflow-init:
+    <<: *airflow-common
+    entrypoint: /bin/bash
+    command:
+      - -c
+      - |
+        set -e
+        airflow db migrate
+        if airflow users list 2>/dev/null | grep -qw "${AIRFLOW_ADMIN_USER}"; then
+          echo "Admin user already exists, skipping creation."
+        else
+          airflow users create \
+            --username "${AIRFLOW_ADMIN_USER}" \
+            --password "${AIRFLOW_ADMIN_PASSWORD}" \
+            --firstname Airflow \
+            --lastname Admin \
+            --role Admin \
+            --email admin@example.com
+        fi
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8180:8080"
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    restart: unless-stopped
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: containers/dashboard/Dockerfile
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: it_jobs_dw
+    ports:
+      - "127.0.0.1:8501:8501"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8501/_stcore/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:
+  minio_data:
+  airflow_logs:

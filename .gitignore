@@ -1,0 +1,57 @@
+.venv/
+__pycache__/
+*.pyc
+data/
+.auth/
+storage_state/*
+!storage_state/.gitkeep
+
+# Crawler runtime.
+jobs_*.parquet
+jobs_*.csv
+*_state.json
+session*.json
+*.har
+*.trace.zip
+browser_profile/
+playwright-report/
+test-results/
+
+# Local-only manual crawlers, sessions and browser profiles.
+crawl/
+.env
+/tests/
+.idea/
+.vscode/
+.codex/
+.codex-skill-staging/
+context/
+
+# dbt.
+transform_dbt/target/
+transform_dbt/dbt_packages/
+transform_dbt/logs/
+transform_dbt/.user.yml
+
+# scratch / runtime.
+tmp/
+logs/
+debug.log
+*.log   
+
+# Python / tooling cache.
+.uv-cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+.DS_Store
+Thumbs.db
+.sqlfluff
+
+# Env variants and extra tool caches.
+.env.*
+!.env.example
+.mypy_cache/
+*.egg-info/
+.ipynb_checkpoints/

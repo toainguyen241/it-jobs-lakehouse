@@ -1,0 +1,50 @@
+name: Upstream check
+on:
+  schedule:
+    - cron: "17 2 * * 1"
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/upstream-check.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  upstream:
+    name: Pinned images and downloads
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - name: Pull images used by Docker Compose
+        run: |
+          set -euo pipefail
+          cp .env.example .env
+          docker compose config --quiet
+          for attempt in 1 2 3; do
+            docker compose pull --ignore-buildable && break
+            if [ "$attempt" = "3" ]; then exit 1; fi
+            sleep 30
+          done
+
+      - name: Check base images of the Dockerfiles
+        run: |
+          set -euo pipefail
+          grep -hE '^FROM ' containers/*/Dockerfile | awk '{print $2}' | sort -u | while read -r ref; do
+            echo "Checking $ref"
+            docker buildx imagetools inspect "$ref" > /dev/null
+          done
+
+      - name: Check the pinned Chrome package
+        run: |
+          set -euo pipefail
+          url=$(grep -ohE 'https://dl\.google\.com[^[:space:]"\\]+\.deb' containers/airflow/Dockerfile | head -n 1)
+          test -n "$url"
+          code=$(curl --silent --head --location --output /dev/null --write-out '%{http_code}' "$url")
+          echo "Chrome package: HTTP $code ($url)"
+          test "$code" = "200"

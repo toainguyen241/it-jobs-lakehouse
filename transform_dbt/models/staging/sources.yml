@@ -1,0 +1,14 @@
+version: 2
+
+sources:
+  - name: bronze
+    schema: bronze
+    tables:
+      - name: raw_jobs_crawled
+        description: "JSONB staging cho cac nguon crawled, dedup theo (job_id_nk, source_name)."
+        columns:
+          - name: job_id_nk
+            tests:
+              - not_null
+      - name: raw_jobs_kaggle_global_ai_2025
+        description: "Typed staging cho Kaggle Global AI Job Market & Salary Trends 2025."

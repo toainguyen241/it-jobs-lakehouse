@@ -1,0 +1,65 @@
+version: 2
+
+models:
+  - name: stg_crawled
+    description: "Typed staging view extracted from crawled Bronze JSONB without business transformations."
+    columns:
+      - name: job_id_nk
+        description: "Natural job identifier from the source."
+        data_tests: [not_null]
+      - name: source_name
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['itviec', 'topdev', 'topcv', 'indeed', 'weworkremotely', 'remoteok']
+      - name: source_type
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['crawled']
+      - name: scraped_at
+        data_tests: [not_null]
+      - name: job_title
+        data_tests: [not_null]
+      - name: company_name
+        data_tests: [not_null]
+      - name: posted_date
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: salary_text
+        description: "Raw salary text retained for parsing and audit."
+
+  - name: stg_kaggle_global_ai_2025
+    description: "Renamed and typed staging view for the Kaggle global AI jobs dataset."
+    columns:
+      - name: job_id_nk
+        data_tests: [not_null, unique]
+      - name: source_name
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['kaggle']
+      - name: source_type
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['kaggle_dataset']
+      - name: job_title
+        data_tests: [not_null]
+      - name: company_name
+        data_tests: [not_null]
+      - name: salary_currency
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fx_rates')
+                field: currency
+      - name: posted_date
+        data_tests: [not_null]

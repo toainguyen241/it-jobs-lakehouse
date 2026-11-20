@@ -1,0 +1,79 @@
+version: 2
+
+updates:
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      time: "09:00"
+      timezone: "Asia/Bangkok"
+    groups:
+      python-runtime:
+        patterns: ["*"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    open-pull-requests-limit: 2
+
+  - package-ecosystem: "pip"
+    directory: "/dashboard"
+    schedule:
+      interval: "monthly"
+      time: "09:15"
+      timezone: "Asia/Bangkok"
+    groups:
+      dashboard-runtime:
+        patterns: ["*"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    open-pull-requests-limit: 2
+
+  - package-ecosystem: "docker"
+    directory: "/containers/airflow"
+    schedule:
+      interval: "monthly"
+      time: "09:30"
+      timezone: "Asia/Bangkok"
+    ignore:
+      - dependency-name: "apache/airflow"
+      - dependency-name: "python"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    open-pull-requests-limit: 1
+
+  - package-ecosystem: "docker"
+    directory: "/containers/dashboard"
+    schedule:
+      interval: "monthly"
+      time: "09:45"
+      timezone: "Asia/Bangkok"
+    ignore:
+      - dependency-name: "python"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+    open-pull-requests-limit: 1
+
+  - package-ecosystem: "docker-compose"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      time: "10:00"
+      timezone: "Asia/Bangkok"
+    groups:
+      compose-images:
+        patterns: ["*"]
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "pgsty/silo"
+    open-pull-requests-limit: 1
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+      time: "10:15"
+      timezone: "Asia/Bangkok"
+    groups:
+      ci-actions:
+        patterns: ["*"]
+    open-pull-requests-limit: 1

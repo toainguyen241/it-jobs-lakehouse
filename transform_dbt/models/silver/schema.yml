@@ -1,0 +1,53 @@
+version: 2
+
+models:
+  - name: rejected_jobs
+    description: "Crawled jobs excluded from Silver/Gold, retained with an auditable rejection reason."
+    columns:
+      - name: source_name
+        data_tests: [not_null]
+      - name: job_id_nk
+        data_tests: [not_null]
+      - name: rejection_stage
+        data_tests: [not_null]
+      - name: rejection_reason
+        data_tests: [not_null]
+
+  - name: silver_jobs_unified
+    description: "Unified crawled and Kaggle jobs with normalized annual salary values in USD."
+    columns:
+      - name: job_id_nk
+        data_tests: [not_null]
+      - name: source_type
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['crawled', 'kaggle_dataset']
+      - name: source_name
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['itviec', 'topdev', 'topcv', 'indeed', 'weworkremotely', 'remoteok', 'kaggle']
+      - name: job_title
+        data_tests: [not_null]
+      - name: company_name
+        data_tests: [not_null]
+      - name: posted_date
+        data_tests:
+          - not_null:
+              config:
+                severity: warn
+      - name: posted_date_is_estimated
+        data_tests: [not_null]
+      - name: salary_text_raw
+        description: "Original crawled salary text retained for parser traceability; null for Kaggle rows."
+      - name: salary_status
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['scraped', 'corrected', 'not_disclosed', 'invalid']
+      - name: correction_reason
+        description: "Audit reason populated only when salary_status is corrected."

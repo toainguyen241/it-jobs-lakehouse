@@ -1,0 +1,33 @@
+version: 2
+
+seeds:
+  - name: skill_aliases
+    description: Curated allow-list mapping normalized source labels to canonical IT skills used by Gold marts.
+    columns:
+      - name: skill_alias
+        data_tests: [not_null, unique]
+      - name: canonical_skill_name
+        data_tests: [not_null]
+      - name: skill_category
+        data_tests: [not_null]
+
+  - name: company_aliases
+    description: >
+      Manual company aliases the heuristic company_group_key cannot catch. alias_key is the
+      company_group_key of a variant name (lower-case a-z0-9); canonical_name is the display name.
+    columns:
+      - name: alias_key
+        data_tests: [not_null, unique]
+      - name: canonical_name
+        data_tests: [not_null]
+
+  - name: vn_location_aliases
+    description: >
+      Maps unaccented, lower-case Vietnamese place labels (city, district, popular area) to the canonical analysis city.
+    columns:
+      - name: alias_key
+        data_tests: [not_null, unique]
+      - name: city
+        data_tests: [not_null]
+      - name: province_2025
+        data_tests: [not_null]
